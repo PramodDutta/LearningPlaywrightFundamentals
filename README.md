@@ -73,6 +73,9 @@ npx playwright test tests/03_Locators_Commands/
 │   │   └── 231_Multiple_Element.spec.ts        # Basic multiple element interactions
 │   └── 07_WebTables/                           # Web table automation
 │       └── 232_WebTable_Basic.spec.ts          # Web table extraction and verification
+│   └── Projects/                               # Real-world project tests
+│       └── Project_4_TTA_BANK/
+│           └── Task1.spec.ts                   # TTA Bank sign-up, transfer & balance verification
 ├── utils/
 │   └── CustomTTAReporter.ts                    # Custom HTML reporter (TheTestingAcademy)
 ├── playwright.config.ts     # Playwright configuration
@@ -135,6 +138,10 @@ Demonstrates handling multiple elements on a page:
 ### Web Tables (07_WebTables)
 Demonstrates automating and verifying HTML tables:
 - `232_WebTable_Basic.spec.ts` — verify table headers, extract cell data, and iterate over rows
+
+### Projects (Projects)
+Real-world end-to-end project scenarios:
+- `Project_4_TTA_BANK/Task1.spec.ts` — TTA Bank: sign-up, transfer funds, and verify dashboard balance
 
 ## Viewing Reports
 
