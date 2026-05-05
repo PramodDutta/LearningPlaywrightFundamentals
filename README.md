@@ -36,6 +36,16 @@ npx playwright test tests/01_Basics/Lab209.spec.ts
 npx playwright test tests/03_Locators_Commands/
 ```
 
+### Shortcut Commands (npm scripts)
+
+```bash
+npm test                    # Run all tests
+npm run test:headed         # Run tests in headed mode
+npm run test:ui             # Run tests in UI mode
+npm run report              # Open Playwright HTML report
+npm run report:tta          # Open custom TTA report
+```
+
 ## Project Structure
 
 ```
@@ -71,13 +81,14 @@ npx playwright test tests/03_Locators_Commands/
 │   │   └── 230_Login.spec.ts                   # Login test annotated with Allure metadata
 │   ├── 06_Multiple_Element_/                   # Handling multiple elements
 │   │   └── 231_Multiple_Element.spec.ts        # Basic multiple element interactions
-│   └── 07_WebTables/                           # Web table automation
-│       └── 232_WebTable_Basic.spec.ts          # Web table extraction and verification
+│   ├── 07_WebTables/                           # Web table automation
+│   │   └── 232_WebTable_Basic.spec.ts          # Web table extraction and verification
 │   └── Projects/                               # Real-world project tests
 │       └── Project_4_TTA_BANK/
 │           └── Task1.spec.ts                   # TTA Bank sign-up, transfer & balance verification
 ├── utils/
 │   └── CustomTTAReporter.ts                    # Custom HTML reporter (TheTestingAcademy)
+├── go.sh                    # Quick commit & push script
 ├── playwright.config.ts     # Playwright configuration
 ├── package.json
 └── .github/
@@ -155,6 +166,23 @@ npx allure open ./allure-report
 
 # The custom TTA reporter writes its output to ./tta-report
 ```
+
+## Quick Git Workflow
+
+Use the provided `go.sh` script to quickly stage, commit, and push all changes:
+
+```bash
+# Using the shell script directly
+./go.sh "your commit message"
+
+# Using npm
+npm run go -- "your commit message"
+
+# If no message is provided, a default timestamped message is used
+./go.sh
+```
+
+> **Note:** The `go.sh` script stages **all** changes, commits them, and pushes to `origin/main`.
 
 ## CI/CD
 

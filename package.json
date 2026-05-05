@@ -2,7 +2,14 @@
   "name": "learningplaywrightfundamentals",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "go": "bash go.sh",
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:ui": "npx playwright test --ui",
+    "report": "npx playwright show-report",
+    "report:tta": "open tta-report/index.html"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

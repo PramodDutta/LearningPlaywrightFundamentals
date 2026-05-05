@@ -17,6 +17,8 @@ interface TransferData {
 
 async function fillSignUpForm(page: Page, data: SignUpData): Promise<void> {
     await page.goto(BASE_URL);
+    await page.getByRole('button', { name: ' Sign Up' }).click();
+
 
     await expect(page.getByText('Create your digital account')).toBeVisible();
 
