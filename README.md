@@ -67,9 +67,14 @@ npx playwright test tests/03_Locators_Commands/
 │   ├── 04_Session_Storage/                     # Session reuse via storageState
 │   │   ├── 228_Session.spec.ts                 # Save logged-in session to JSON
 │   │   └── 229.TestVWo.spec.ts                 # Reuse saved session — skip login
-│   └── 05_Allure_Reporting/                    # Allure reporting examples
-│       └── 230_Login.spec.ts                   # Login test annotated with Allure metadata
-├── CustomTTAReporter.ts     # Custom HTML reporter (TheTestingAcademy)
+│   ├── 05_Allure_Reporting/                    # Allure reporting examples
+│   │   └── 230_Login.spec.ts                   # Login test annotated with Allure metadata
+│   ├── 06_Multiple_Element_/                   # Handling multiple elements
+│   │   └── 231_Multiple_Element.spec.ts        # Basic multiple element interactions
+│   └── 07_WebTables/                           # Web table automation
+│       └── 232_WebTable_Basic.spec.ts          # Web table extraction and verification
+├── utils/
+│   └── CustomTTAReporter.ts                    # Custom HTML reporter (TheTestingAcademy)
 ├── playwright.config.ts     # Playwright configuration
 ├── package.json
 └── .github/
@@ -123,6 +128,14 @@ Demonstrates saving and reusing authenticated browser sessions to skip repetitiv
 Demonstrates rich test reporting via the Allure framework:
 - `230_Login.spec.ts` — annotate tests with `allure.epic`, `allure.feature`, `allure.story`, and `allure.description` for structured reports
 
+### Multiple Elements (06_Multiple_Element_)
+Demonstrates handling multiple elements on a page:
+- `231_Multiple_Element.spec.ts` — basic interactions with multiple elements and assertions
+
+### Web Tables (07_WebTables)
+Demonstrates automating and verifying HTML tables:
+- `232_WebTable_Basic.spec.ts` — verify table headers, extract cell data, and iterate over rows
+
 ## Viewing Reports
 
 ```bash
@@ -149,8 +162,9 @@ This project includes a GitHub Actions workflow that:
 The `playwright.config.ts` file includes:
 - Test directory: `./tests`
 - Parallel execution enabled
-- Multiple reporters: HTML, Allure (`allure-playwright`), and the custom `CustomTTAReporter.ts`
+- Multiple reporters: HTML, Allure (`allure-playwright`), and the custom `utils/CustomTTAReporter.ts`
 - Chromium browser configured
+- Full HD viewport (`1920x1080`) for maximized browser window
 - Trace, video, and screenshot capture set to `on` for every test (great for learning/debugging)
 - Headed mode enabled (`headless: false`) for easier learning and debugging
 
