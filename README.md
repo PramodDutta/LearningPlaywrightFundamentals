@@ -32,6 +32,7 @@
    - [05 — Allure Reporting](#05--allure-reporting)
    - [06 — Multiple Elements](#06--multiple-elements)
    - [07 — Web Tables](#07--web-tables)
+   - [08 — Select / Dropdowns / Frames](#08--select--dropdowns--frames)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
@@ -55,8 +56,9 @@ flowchart LR
     B --> C[🎯 Locators & Navigation<br/>Labs 219–227]
     C --> D[🔐 Session Reuse<br/>Labs 228–229]
     D --> E[📊 Reporting<br/>Lab 230]
-    E --> F[📑 Multi-element / Tables<br/>Labs 231–233]
-    F --> G[🏦 Real Project<br/>TTA Bank]
+    E --> F[📑 Multi-element / Tables<br/>Labs 231–234]
+    F --> H[🎚 Selects / Dropdowns / Frames<br/>Labs 234–238]
+    H --> G[🏦 Real Project<br/>TTA Bank]
 
     style A fill:#fef3c7,stroke:#f59e0b,color:#000
     style G fill:#d1fae5,stroke:#10b981,color:#000
@@ -74,8 +76,9 @@ flowchart LR
 | 4 | `04_Session_Storage` | 228–229 | `storageState` — login once, reuse session forever |
 | 5 | `05_Allure_Reporting` | 230 | Allure annotations: epic → feature → story |
 | 6 | `06_Multiple_Element_` | 231 | `allInnerTexts`, iterating collections |
-| 7 | `07_WebTables` | 232–233 | Static + dynamic HTML table extraction |
-| 8 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| 7 | `07_WebTables` | 232–234 | Static + dynamic HTML table extraction, employee management |
+| 8 | `08_Web_Select_Frames_Iframe` | 234–238 | Native + custom + React-Select dropdowns, async/grouped/creatable |
+| 9 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 
 ---
 
@@ -209,7 +212,16 @@ LearningPlaywrightFundamentals/
 │   │
 │   ├── 07_WebTables/                           # 🗂 HTML tables
 │   │   ├── 232_WebTable_Basic.spec.ts          # Static, XPath + Native
-│   │   └── 233_WebTable_Dyanamic.spec.ts       # Dynamic structured extraction
+│   │   ├── 233_WebTable_Dyanamic.spec.ts       # Dynamic structured extraction
+│   │   └── 234_WebTABLE_Employe_Management.spec.ts  # 🚧 Employee mgmt scaffold
+│   │
+│   ├── 08_Web_Select_Frames_Iframe/            # 🎚 Dropdowns / selects / frames
+│   │   ├── 234_Web.spec.ts                     # Sibling-axis + :has() row locators
+│   │   ├── 235_Select_FramesWeb.spec.ts        # Native <select> via selectOption
+│   │   ├── 236_Advacne_Select_Frames2.spec.ts  # Custom div-based dropdowns
+│   │   ├── 237_Advacne_Select_Pro.spec.ts      # React-Select: single/multi/creatable/async
+│   │   ├── 238_Advance_Select_Pro_v2.spec.ts   # React-Select pro: remove tag / grouped / async
+│   │   └── util.ts                             # selectValue() helper
 │   │
 │   └── Projects/
 │       └── Project_4_TTA_BANK/
@@ -488,6 +500,62 @@ flowchart LR
     D --> E[Read cell with<br/>td:nth&#40;n&#41;.innerText]
     E --> F[Assert / collect data]
 ```
+
+> Lab **234** (`234_WebTABLE_Employe_Management.spec.ts`) is a placeholder for the upcoming **Employee Management** end-to-end exercise — covering CRUD over a dynamic table with row filtering and inline edits.
+
+---
+
+### 08 — Select / Dropdowns / Frames
+
+Real-world apps rarely use plain `<select>`. This module walks through **three flavours of "dropdown"** and shows the right Playwright pattern for each.
+
+```mermaid
+flowchart TD
+    Q{Dropdown type?} -->|Native &lt;select&gt;| N[selectOption&#40;value&#41;]
+    Q -->|Custom div + onclick<br/>e.g. TTA app| C[click trigger →<br/>getByText option]
+    Q -->|React-Select / Headless UI| R[click → search →<br/>getByRole&#40;'option'&#41;]
+
+    style N fill:#d1fae5,stroke:#10b981,color:#000
+    style C fill:#fef3c7,stroke:#f59e0b,color:#000
+    style R fill:#dbeafe,stroke:#3b82f6,color:#000
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 234 | `234_Web.spec.ts` | XPath sibling-axis (`preceding-sibling::td/input`) + `tr:has(td:text('...'))` row filter |
+| 235 | `235_Select_FramesWeb.spec.ts` | Native `<select>` via `page.selectOption()` on `the-internet.herokuapp.com` |
+| 236 | `236_Advacne_Select_Frames2.spec.ts` | Custom **div-based** dropdowns — click trigger then `getByText({ exact: true })` |
+| 237 | `237_Advacne_Select_Pro.spec.ts` | **React-Select**: single, multi (with `Escape`), creatable tags, async typeahead |
+| 238 | `238_Advance_Select_Pro_v2.spec.ts` | React-Select **pro**: remove a chosen tag, pick from a *grouped* section, search-then-pick async |
+| — | `util.ts` | Reusable `selectValue(page, label, value)` helper for label-driven dropdowns |
+
+#### React-Select Pattern (Lab 237 / 238)
+
+```ts
+// Single, searchable
+await page.getByTestId('rs-single').click();
+await page.getByTestId('rs-single-input').fill('play');
+await page.getByRole('option', { name: 'Playwright' }).click();
+
+// Multi — pick three
+for (const name of ['Playwright', 'Pytest', 'TestNG']) {
+    await page.getByTestId('rs-multi').click();
+    await page.getByRole('option', { name }).click();
+}
+
+// Async — wait for results to come back from the server
+await page.getByTestId('rs-async-input').fill('pun');
+await expect(page.getByTestId('rs-async-menu')).toContainText('Pune');
+await page.getByRole('option', { name: 'Pune' }).click();
+```
+
+#### When to Use Which Dropdown API
+
+| Widget | Detect | Use |
+|:-------|:-------|:----|
+| `<select>` | Inspect → `<select>` tag | `page.selectOption(selector, value)` |
+| Custom CSS dropdown | Click reveals `<div role="listbox">` | `click trigger` → `getByText(option, { exact: true })` |
+| React-Select / Combobox | `role="combobox"` + `role="option"` | `click` → `fill` → `getByRole('option', { name })` |
 
 ---
 
