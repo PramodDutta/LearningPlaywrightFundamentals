@@ -36,6 +36,7 @@
    - [09 — Frames & Iframes](#09--frames--iframes)
    - [10 — Keyboard, Hover, Drag & Drop, Right Click](#10--keyboard-hover-drag--drop-right-click)
    - [11 — JS Alerts / Confirms / Prompts](#11--js-alerts--confirms--prompts)
+   - [12 — Handling SVG Elements](#12--handling-svg-elements)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
@@ -64,7 +65,8 @@ flowchart LR
     H --> I[🪟 Iframes<br/>Labs 239–241]
     I --> J[⌨️ Keyboard / Hover / DnD<br/>Labs 242, 244–247]
     J --> K[🔔 JS Alerts<br/>Lab 243]
-    K --> G[🏦 Real Project<br/>TTA Bank]
+    K --> L[🖼 SVG Elements<br/>Labs 248–250]
+    L --> G[🏦 Real Project<br/>TTA Bank]
 
     style A fill:#fef3c7,stroke:#f59e0b,color:#000
     style G fill:#d1fae5,stroke:#10b981,color:#000
@@ -87,7 +89,8 @@ flowchart LR
 | 9 | `09_Frame_Iframe` | 239–241 | `frameLocator`, multi-frame pages, nested iframe-in-iframe |
 | 10 | `10_Keyboard_Hover_Drag_Drop` | 242, 244–247 | `page.keyboard`, hover menus, `dragTo` + manual mouse DnD, right-click context menus |
 | 11 | `11_JS_Alerts` | 243 | `page.on('dialog')` — alert / confirm / prompt accept + dismiss |
-| 12 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| 12 | `12_Handle_SVG` | 248–250 | SVG namespace — click shapes, iterate `.bar` nodes, read attributes |
+| 13 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 
 ---
 
@@ -246,6 +249,11 @@ LearningPlaywrightFundamentals/
 │   │
 │   ├── 11_JS_Alerts/                           # 🔔 Native browser dialogs
 │   │   └── 243_JS_Alerts.spec.ts               # alert / confirm / prompt — accept + dismiss
+│   │
+│   ├── 12_Handle_SVG/                          # 🖼 SVG namespace shapes
+│   │   ├── 248_SVG_Project.spec.ts             # Flipkart — click SVG search icon, read results
+│   │   ├── 249_SVG_Practice.spec.ts            # TTA widget — click circle / bar / radio shapes
+│   │   └── 250_Advance_SVG_pROJECT.spec.ts     # 🚧 Advanced SVG scaffold
 │   │
 │   └── Projects/
 │       └── Project_4_TTA_BANK/
@@ -685,6 +693,54 @@ test('JS Confirm accept', async ({ page }) => {
 | `prompt` | `accept('text')` / `dismiss()` | Pass text into `accept` |
 
 > ⚠️ Use `page.once` not `page.on` — otherwise the handler stays alive across tests and swallows future dialogs.
+
+---
+
+### 12 — Handling SVG Elements
+
+SVG nodes live in their own namespace — but Playwright treats them like any DOM node. CSS selectors and `getByRole` work out of the box. XPath needs `name()` / `local-name()` because tags are namespaced (`svg:path`).
+
+```mermaid
+flowchart LR
+    A[svg root] --> B[child shapes]
+    B --> C1[circle]
+    B --> C2[rect / bar]
+    B --> C3[path]
+    C1 --> D[click / hover / read attrs]
+    C2 --> D
+    C3 --> D
+    D --> E[assert state / output text]
+
+    style A fill:#1e3a8a,stroke:#1e40af,color:#fff
+    style E fill:#d1fae5,stroke:#10b981,color:#000
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 248 | `248_SVG_Project.spec.ts` | Real-world — click Flipkart's SVG search icon, scrape product titles via XPath |
+| 249 | `249_SVG_Practice.spec.ts` | TTA widget — click `#circle-blue`, iterate `.bar` nodes, read `data-quarter` |
+| 250 | `250_Advance_SVG_pROJECT.spec.ts` | 🚧 Scaffold for advanced SVG scenarios |
+
+```ts
+// Click an SVG shape by id, then iterate all bars
+const circle = page.locator('#circle-blue');
+await circle.click();
+expect(await page.locator('#shapes-output').innerText()).toContain('Blue circle');
+
+const bars = await page.locator('.bar').all();
+for (const bar of bars) {
+    const quarter = await bar.getAttribute('data-quarter');
+    await bar.click();
+    console.log(quarter);
+}
+```
+
+| Selector Style | SVG-safe? | Example |
+|:---------------|:---------:|:--------|
+| CSS `#id` / `.class` | ✅ | `page.locator('#circle-blue')` |
+| `getByRole` | ✅ (if `role` attr present) | `page.getByRole('button', { name: /Q3 bar/ })` |
+| `[data-*]` attr | ✅ | `page.locator('[data-quarter="Q3"]')` |
+| XPath plain tag | ❌ | `//path` may not match — use `//*[name()='path']` |
 
 ---
 
