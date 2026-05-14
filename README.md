@@ -259,7 +259,7 @@ LearningPlaywrightFundamentals/
 │   ├── 12_Handle_SVG/                          # 🖼 SVG namespace shapes
 │   │   ├── 248_SVG_Project.spec.ts             # Flipkart — click SVG search icon, read results
 │   │   ├── 249_SVG_Practice.spec.ts            # TTA widget — click circle / bar / radio shapes
-│   │   └── 250_Advance_SVG_pROJECT.spec.ts     # 🚧 Advanced SVG scaffold
+│   │   └── 250_Advance_SVG_pROJECT.spec.ts     # SimpleMaps India — read state labels, click Uttar Pradesh path
 │   │
 │   ├── 13_Shadow_DOM/                          # 🌑 Shadow DOM piercing
 │   │   └── 251_Shadom_DOM.spec.ts              # TTA widget — login card, counter cart, nested host
@@ -734,7 +734,7 @@ flowchart LR
 |:---:|:-----|:-------------|
 | 248 | `248_SVG_Project.spec.ts` | Real-world — click Flipkart's SVG search icon, scrape product titles via XPath |
 | 249 | `249_SVG_Practice.spec.ts` | TTA widget — click `#circle-blue`, iterate `.bar` nodes, read `data-quarter` |
-| 250 | `250_Advance_SVG_pROJECT.spec.ts` | 🚧 Scaffold for advanced SVG scenarios |
+| 250 | `250_Advance_SVG_pROJECT.spec.ts` | SimpleMaps India — XPath `name()` to read all state labels, filter to "Uttar Pradesh", click `path.INUP` |
 
 ```ts
 // Click an SVG shape by id, then iterate all bars
@@ -756,6 +756,52 @@ for (const bar of bars) {
 | `getByRole` | ✅ (if `role` attr present) | `page.getByRole('button', { name: /Q3 bar/ })` |
 | `[data-*]` attr | ✅ | `page.locator('[data-quarter="Q3"]')` |
 | XPath plain tag | ❌ | `//path` may not match — use `//*[name()='path']` |
+
+#### Lab 250 — SimpleMaps India: XPath `name()` Deep Dive
+
+**Concept:** SVG nodes live in the SVG namespace (`http://www.w3.org/2000/svg`). Plain XPath selectors like `//svg` or `//text` ignore namespaced nodes. Use `name()` (or `local-name()`) on the wildcard `*` to match by tag name across namespaces.
+
+**Why:** Map widgets render states as `<svg>` → `<text class="sm_label">` (the label) and `<path class="INUP">` (the clickable region). Plain `//text` returns zero hits — every selector needs the `name()` escape hatch.
+
+**Q&A — why use this?**
+- **Q: Why not just use CSS?** A: CSS works for class-based hits (`.sm_label`), but XPath wins when you need to **combine** namespace-safe tag matching with predicates (`name()='text' and contains(@class,...)`).
+- **Q: `name()` vs `local-name()`?** A: `name()` returns prefixed name (`svg:path`), `local-name()` strips the prefix (`path`). For SVG-only DOMs they're interchangeable; for mixed XML use `local-name()`.
+- **Q: Why `allTextContents()` over `allInnerTexts()`?** A: SVG `<text>` is rendered via SVG paint, not CSS box — `innerText` can return empty. `textContent` reads the underlying DOM string and always works.
+
+```mermaid
+flowchart LR
+    A[page.goto SimpleMaps] --> B["//div[@id='admin1_map_inner']//*[name()='svg']"]
+    B --> C["//*[name()='text' and contains(@class,'sm_label')]"]
+    C --> D[allTextContents → string array of 36 states]
+    D --> E{state === 'Uttar Pradesh'?}
+    E -->|yes| F["click //*[name()='path' and contains(@class,'INUP')]"]
+    E -->|no| D
+
+    style A fill:#1e3a8a,stroke:#1e40af,color:#fff
+    style F fill:#d1fae5,stroke:#10b981,color:#000
+```
+
+```ts
+const states = await page
+    .locator(`//div[@id='admin1_map_inner']//*[name()='svg']//*[name()='text' and contains(@class,'sm_label')]`)
+    .allTextContents();
+
+for (const state of states) {
+    if (state.trim() === 'Uttar Pradesh') {
+        await page
+            .locator(`//*[name()='path' and contains(@class,'INUP')]`)
+            .click();
+    }
+}
+```
+
+| Locator | Result on SVG | Note |
+|:--------|:-------------:|:-----|
+| `//svg` | ❌ empty | Wrong namespace |
+| `//*[name()='svg']` | ✅ match | Namespace-safe |
+| `//*[local-name()='path']` | ✅ match | Strips prefix |
+| `css=svg` | ✅ match | CSS ignores namespaces |
+| `text=Uttar Pradesh` | ⚠️ unreliable | Some SVG renderers strip text from accessible tree |
 
 ---
 
