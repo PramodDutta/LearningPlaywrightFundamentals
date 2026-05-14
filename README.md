@@ -37,6 +37,8 @@
    - [10 — Keyboard, Hover, Drag & Drop, Right Click](#10--keyboard-hover-drag--drop-right-click)
    - [11 — JS Alerts / Confirms / Prompts](#11--js-alerts--confirms--prompts)
    - [12 — Handling SVG Elements](#12--handling-svg-elements)
+   - [13 — Shadow DOM](#13--shadow-dom)
+   - [14 — File Upload](#14--file-upload)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
@@ -66,7 +68,9 @@ flowchart LR
     I --> J[⌨️ Keyboard / Hover / DnD<br/>Labs 242, 244–247]
     J --> K[🔔 JS Alerts<br/>Lab 243]
     K --> L[🖼 SVG Elements<br/>Labs 248–250]
-    L --> G[🏦 Real Project<br/>TTA Bank]
+    L --> M[🌑 Shadow DOM<br/>Lab 251]
+    M --> N[📤 File Upload<br/>Labs 252–253]
+    N --> G[🏦 Real Project<br/>TTA Bank]
 
     style A fill:#fef3c7,stroke:#f59e0b,color:#000
     style G fill:#d1fae5,stroke:#10b981,color:#000
@@ -90,7 +94,9 @@ flowchart LR
 | 10 | `10_Keyboard_Hover_Drag_Drop` | 242, 244–247 | `page.keyboard`, hover menus, `dragTo` + manual mouse DnD, right-click context menus |
 | 11 | `11_JS_Alerts` | 243 | `page.on('dialog')` — alert / confirm / prompt accept + dismiss |
 | 12 | `12_Handle_SVG` | 248–250 | SVG namespace — click shapes, iterate `.bar` nodes, read attributes |
-| 13 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| 13 | `13_Shadow_DOM` | 251 | Shadow DOM piercing — `getByTestId` auto-traverses open shadow roots |
+| 14 | `14_FileUpload` | 252–253 | `setInputFiles` — single from disk, multiple from `Buffer` |
+| 15 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 
 ---
 
@@ -254,6 +260,15 @@ LearningPlaywrightFundamentals/
 │   │   ├── 248_SVG_Project.spec.ts             # Flipkart — click SVG search icon, read results
 │   │   ├── 249_SVG_Practice.spec.ts            # TTA widget — click circle / bar / radio shapes
 │   │   └── 250_Advance_SVG_pROJECT.spec.ts     # 🚧 Advanced SVG scaffold
+│   │
+│   ├── 13_Shadow_DOM/                          # 🌑 Shadow DOM piercing
+│   │   └── 251_Shadom_DOM.spec.ts              # TTA widget — login card, counter cart, nested host
+│   │
+│   ├── 14_FileUpload/                          # 📤 File upload — single + multi
+│   │   ├── 252_FileUpload.spec.ts              # the-internet — setInputFiles from disk path
+│   │   ├── 253_Multi_FileUpload.spec.ts        # PatternFly — multi files via Buffer payload
+│   │   ├── file1.jpg / file2.jpg               # Sample upload assets
+│   │   └── testdata.txt                        # Sample upload payload
 │   │
 │   └── Projects/
 │       └── Project_4_TTA_BANK/
@@ -741,6 +756,93 @@ for (const bar of bars) {
 | `getByRole` | ✅ (if `role` attr present) | `page.getByRole('button', { name: /Q3 bar/ })` |
 | `[data-*]` attr | ✅ | `page.locator('[data-quarter="Q3"]')` |
 | XPath plain tag | ❌ | `//path` may not match — use `//*[name()='path']` |
+
+---
+
+### 13 — Shadow DOM
+
+Web Components hide internals behind a **shadow root**. Playwright pierces *open* shadow roots automatically — `getByTestId`, `getByRole`, `locator('css')` all see through. No `evaluateHandle` gymnastics needed.
+
+```mermaid
+flowchart TD
+    P[page] --> H1[host: card-account]
+    H1 -.open shadow root.-> S1[input email + submit]
+    P --> H2[host: counter-cart]
+    H2 -.open shadow root.-> S2[Increment button + counter]
+    P --> H3[host: nested-host]
+    H3 -.open shadow root.-> H4[inner host]
+    H4 -.shadow root.-> S3[card-inside-email / submit]
+
+    style S1 fill:#d1fae5,stroke:#10b981,color:#000
+    style S2 fill:#d1fae5,stroke:#10b981,color:#000
+    style S3 fill:#d1fae5,stroke:#10b981,color:#000
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 251 | `251_Shadom_DOM.spec.ts` | TTA widget — fill login card inside shadow root, click `Increment` inside counter, drive **nested** shadow host |
+
+```ts
+const card = page.getByTestId('card-account');
+await card.locator('input[name="email"]').fill('student@thetestingacademy.com');
+await card.getByTestId('card-account-submit').click();
+
+// Nested shadow — Playwright still pierces
+await page.getByTestId('card-inside-email').fill('pramod@thetestingacdemy.com');
+await page.getByTestId('card-inside-submit').click();
+```
+
+| Shadow Mode | Pierceable? | Notes |
+|:------------|:-----------:|:------|
+| `open` | ✅ | Default for most frameworks (Lit, Stencil, custom) — works out of box |
+| `closed` | ❌ | Rare in practice — host owns the only reference, can't be queried |
+
+> ⚠️ XPath does **not** pierce shadow boundaries. Stick to CSS / role / testId selectors.
+
+---
+
+### 14 — File Upload
+
+`setInputFiles` is the one true API. Two payload styles — point at a real file on disk, or synthesize one in-memory with a `Buffer`.
+
+```mermaid
+flowchart TD
+    Q{Have real file?} -->|Yes| A[setInputFiles&#40;path&#41;]
+    Q -->|No — generate in test| B["setInputFiles&#40;{ name, mimeType, buffer }&#41;"]
+    A --> C[input.change event fires]
+    B --> C
+    C --> D[Click submit / Upload]
+
+    style A fill:#d1fae5,stroke:#10b981,color:#000
+    style B fill:#dbeafe,stroke:#3b82f6,color:#000
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 252 | `252_FileUpload.spec.ts` | `the-internet.herokuapp.com/upload` — `setInputFiles([path])` from disk |
+| 253 | `253_Multi_FileUpload.spec.ts` | PatternFly multi-upload — array of `{ name, mimeType, buffer }` objects |
+
+```ts
+// Single file from disk
+const filePath = path.join(__dirname, 'testdata.txt');
+await page.locator('#file-upload').setInputFiles([filePath]);
+await page.getByRole('button', { name: 'Upload' }).click();
+await expect(page.locator('#uploaded-files')).toContainText('testdata.txt');
+
+// Multiple files synthesised in-memory
+await page.locator('div.pf-v6-c-multiple-file-upload input').setInputFiles([
+    { name: 'file1.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('...') },
+    { name: 'file2.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('...') },
+]);
+```
+
+| Payload | Use When |
+|:--------|:---------|
+| `string` / `string[]` (path) | Real fixtures stored alongside test |
+| `{ name, mimeType, buffer }` | Test data should not leak to git, or you want to vary content per test |
+| `[]` (empty array) | Clear a previously selected file |
+
+> 💡 The input may be hidden (`display: none`) — `setInputFiles` works **without** scrolling or clicking. No need to `force: true`.
 
 ---
 
