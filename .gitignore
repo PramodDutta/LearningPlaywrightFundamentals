@@ -16,5 +16,10 @@ node_modules/
 user-session.json
 *-session.json
 
+# Download outputs (Lab 254)
+/out/
+/downlod/
+/tests/15_File_Download/downloads/
+
 # OS junk
 .DS_Store

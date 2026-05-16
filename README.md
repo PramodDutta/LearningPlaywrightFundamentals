@@ -39,6 +39,8 @@
    - [12 — Handling SVG Elements](#12--handling-svg-elements)
    - [13 — Shadow DOM](#13--shadow-dom)
    - [14 — File Upload](#14--file-upload)
+   - [15 — File Download](#15--file-download)
+   - [16 — Scroll to Element](#16--scroll-to-element)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
@@ -70,7 +72,9 @@ flowchart LR
     K --> L[🖼 SVG Elements<br/>Labs 248–250]
     L --> M[🌑 Shadow DOM<br/>Lab 251]
     M --> N[📤 File Upload<br/>Labs 252–253]
-    N --> G[🏦 Real Project<br/>TTA Bank]
+    N --> O[📥 File Download<br/>Lab 254]
+    O --> P[📜 Scroll to Element<br/>Lab 255]
+    P --> G[🏦 Real Project<br/>TTA Bank]
 
     style A fill:#fef3c7,stroke:#f59e0b,color:#000
     style G fill:#d1fae5,stroke:#10b981,color:#000
@@ -96,7 +100,9 @@ flowchart LR
 | 12 | `12_Handle_SVG` | 248–250 | SVG namespace — click shapes, iterate `.bar` nodes, read attributes |
 | 13 | `13_Shadow_DOM` | 251 | Shadow DOM piercing — `getByTestId` auto-traverses open shadow roots |
 | 14 | `14_FileUpload` | 252–253 | `setInputFiles` — single from disk, multiple from `Buffer` |
-| 15 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| 15 | `15_File_Download` | 254 | `page.waitForEvent('download')` + `download.saveAs()` |
+| 16 | `16_Scroll_toElement` | 255 | `scrollIntoViewIfNeeded`, `window.scrollBy/scrollTo`, lazy-list polling |
+| 17 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 
 ---
 
@@ -269,6 +275,12 @@ LearningPlaywrightFundamentals/
 │   │   ├── 253_Multi_FileUpload.spec.ts        # PatternFly — multi files via Buffer payload
 │   │   ├── file1.jpg / file2.jpg               # Sample upload assets
 │   │   └── testdata.txt                        # Sample upload payload
+│   │
+│   ├── 15_File_Download/                       # 📥 File download — waitForEvent + saveAs
+│   │   └── 254_File_Downlaod.spec.ts           # TTA widget — capture download event, persist via saveAs
+│   │
+│   ├── 16_Scroll_toElement/                    # 📜 Scroll APIs — into view + window scroll + lazy
+│   │   └── 255_ScrollToView.spec.ts            # scrollIntoViewIfNeeded, window.scrollBy/To, lazy list grows past 10
 │   │
 │   └── Projects/
 │       └── Project_4_TTA_BANK/
@@ -889,6 +901,119 @@ await page.locator('div.pf-v6-c-multiple-file-upload input').setInputFiles([
 | `[]` (empty array) | Clear a previously selected file |
 
 > 💡 The input may be hidden (`display: none`) — `setInputFiles` works **without** scrolling or clicking. No need to `force: true`.
+
+---
+
+### 15 — File Download
+
+**Concept:** Browser downloads are an *event*, not a return value. Register a `'download'` listener via `page.waitForEvent('download')`, trigger the action that starts the download, then persist the file with `download.saveAs(targetPath)`.
+
+**Why:** Clicking a download link doesn't return a `Response` you can read — the browser hands the bytes to the OS. Playwright bridges that gap by exposing a `Download` object you race against the click.
+
+**Q&A — why use this?**
+- **Q: Why `Promise.all([waitForEvent, click])`?** A: The download event can fire **before** `click()` resolves. Wrapping both in `Promise.all` guarantees you register the listener *before* the click is dispatched — no race.
+- **Q: Where does the file land if I don't call `saveAs`?** A: A temp path under Playwright's run dir; gets deleted at context close. Always `saveAs` if you need to keep it.
+- **Q: Can I assert the bytes?** A: Yes — `await download.path()` returns the temp path; read it with `fs.readFileSync`. Or check `download.suggestedFilename()` for the server-suggested name.
+
+```mermaid
+sequenceDiagram
+    participant T as Test
+    participant P as Page
+    participant B as Browser
+    participant FS as Disk
+
+    T->>P: Promise.all([waitForEvent('download'), click()])
+    P->>B: Click download link
+    B-->>P: download event
+    P-->>T: Download object
+    T->>T: download.suggestedFilename()
+    T->>FS: download.saveAs('out/file.txt')
+    FS-->>T: ✅ File persisted
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 254 | `254_File_Downlaod.spec.ts` | TTA widget — capture static + dynamic downloads, save with `saveAs` |
+
+```ts
+test('demo: download file via waitForEvent', async ({ page }) => {
+    await page.goto('https://app.thetestingacademy.com/playwright/widgets/upload-download');
+
+    const [download] = await Promise.all([
+        page.waitForEvent('download'),
+        page.getByTestId('download-static').click(),
+    ]);
+
+    await download.saveAs('out/' + download.suggestedFilename());
+});
+```
+
+| API | Returns | When |
+|:----|:--------|:-----|
+| `download.suggestedFilename()` | `string` | Use to build a stable target path |
+| `download.path()` | `Promise<string>` | Read temp location (auto-deleted on close) |
+| `download.saveAs(target)` | `Promise<void>` | Persist to your own location |
+| `download.failure()` | `string \| null` | Non-null = download errored |
+
+> ⚠️ Without `Promise.all`, the listener can be registered **after** the event fires → test hangs until timeout.
+
+---
+
+### 16 — Scroll to Element
+
+**Concept:** Playwright auto-scrolls before any action — but sometimes you need to scroll *without* clicking: triggering lazy-load, parking a screenshot at a specific offset, or testing infinite scroll. Use `locator.scrollIntoViewIfNeeded()` for elements, and `page.evaluate(() => window.scrollBy/scrollTo)` for arbitrary offsets.
+
+**Why:** Most modern UIs render content on demand — virtualized lists, IntersectionObserver-driven lazy hydration. The DOM is empty until something scrolls past a threshold. Manual scroll lets you drive that.
+
+**Q&A — why use this?**
+- **Q: `scrollIntoViewIfNeeded` vs `scrollIntoView`?** A: Playwright's variant only scrolls if the element is **not already in viewport** — idempotent, no flake. Native `Element.scrollIntoView()` always scrolls.
+- **Q: When do I need `window.scrollTo`?** A: When there's no anchor element — e.g. "scroll to bottom" or "scroll by exactly 1000px". Wrap in `page.evaluate`.
+- **Q: How do I assert lazy items loaded?** A: `expect.poll(() => list.count()).toBeGreaterThan(initialCount)` — polls until the count grows or timeout fires.
+
+```mermaid
+flowchart TD
+    Q{Goal?} -->|Bring element on-screen| A[locator.scrollIntoViewIfNeeded]
+    Q -->|Scroll by px / to coord| B[page.evaluate window.scrollBy/scrollTo]
+    Q -->|Trigger lazy load| C[scroll last item into view]
+    C --> D[expect.poll count > initial]
+
+    style A fill:#d1fae5,stroke:#10b981,color:#000
+    style B fill:#dbeafe,stroke:#3b82f6,color:#000
+    style D fill:#fef3c7,stroke:#f59e0b,color:#000
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 255 | `255_ScrollToView.spec.ts` | TTA scroll widget — `scrollIntoViewIfNeeded`, `window.scrollBy/To`, lazy list grows past 10 once last item visible |
+
+```ts
+test('lazy list grows when last item scrolled into view', async ({ page }) => {
+    await page.goto('https://app.thetestingacademy.com/playwright/widgets/scroll');
+
+    await page.getByTestId('section-lazy').scrollIntoViewIfNeeded();
+    const list = page.getByTestId('lazy-list').locator('li');
+    const initialCount = await list.count();
+
+    await list.last().scrollIntoViewIfNeeded();
+    await expect.poll(async () => list.count(), {
+        message: 'expected lazy list to load more items',
+        timeout: 10_000,
+    }).toBeGreaterThan(initialCount);
+});
+
+// Window-level scroll — no anchor element needed
+await page.evaluate(() => window.scrollBy(0, 1000));
+await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+```
+
+| API | Scrolls | Use For |
+|:----|:--------|:--------|
+| `locator.scrollIntoViewIfNeeded()` | Specific element (skip if visible) | Lazy load triggers, parking before screenshot |
+| `window.scrollBy(x, y)` | Relative offset | Fixed-distance scroll tests |
+| `window.scrollTo(0, document.body.scrollHeight)` | Jump to bottom | Footer / infinite-scroll bottom |
+| `window.scrollTo(0, 0)` | Jump to top | Reset between checks |
+
+> 💡 Playwright already calls `scrollIntoViewIfNeeded` internally before `click()` / `fill()`. Explicit scroll is only needed when **no action** follows — e.g. just triggering an observer.
 
 ---
 
