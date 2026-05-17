@@ -41,6 +41,8 @@
    - [14 — File Upload](#14--file-upload)
    - [15 — File Download](#15--file-download)
    - [16 — Scroll to Element](#16--scroll-to-element)
+   - [17 — Expect Assertions](#17--expect-assertions)
+   - [18 — Test Hooks & Annotations](#18--test-hooks--annotations)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
@@ -74,7 +76,9 @@ flowchart LR
     M --> N[📤 File Upload<br/>Labs 252–253]
     N --> O[📥 File Download<br/>Lab 254]
     O --> P[📜 Scroll to Element<br/>Lab 255]
-    P --> G[🏦 Real Project<br/>TTA Bank]
+    P --> Q[✅ Expect Assertions<br/>Labs 256–257]
+    Q --> R[🪝 Test Hooks<br/>Labs 258–261]
+    R --> G[🏦 Real Project<br/>TTA Bank]
 
     style A fill:#fef3c7,stroke:#f59e0b,color:#000
     style G fill:#d1fae5,stroke:#10b981,color:#000
@@ -102,7 +106,9 @@ flowchart LR
 | 14 | `14_FileUpload` | 252–253 | `setInputFiles` — single from disk, multiple from `Buffer` |
 | 15 | `15_File_Download` | 254 | `page.waitForEvent('download')` + `download.saveAs()` |
 | 16 | `16_Scroll_toElement` | 255 | `scrollIntoViewIfNeeded`, `window.scrollBy/scrollTo`, lazy-list polling |
-| 17 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| 17 | `17_Expect_Assertions` | 256–257 | Value vs locator vs page assertions, soft assertions, URL/title checks, cheatsheets |
+| 18 | `18_Test_hooks` | 258–261 | Annotations (`skip/slow/fixme/fail`), `test.step`, lifecycle hooks, `describe.serial` |
+| 19 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 
 ---
 
@@ -281,6 +287,18 @@ LearningPlaywrightFundamentals/
 │   │
 │   ├── 16_Scroll_toElement/                    # 📜 Scroll APIs — into view + window scroll + lazy
 │   │   └── 255_ScrollToView.spec.ts            # scrollIntoViewIfNeeded, window.scrollBy/To, lazy list grows past 10
+│   │
+│   ├── 17_Expect_Assertions/                   # ✅ The expect() API — value + locator + page + API
+│   │   ├── 256_Expect.spec.ts                  # value + locator + soft + negation
+│   │   ├── 257_URL_Asserations.spec.ts         # toHaveTitle / toHaveURL / state asserts
+│   │   ├── Expect_Assertions_Cheatsheet.md     # Interview one-pager — every common expect
+│   │   └── More_Expect_Examples.md             # Full TTA assertions reference
+│   │
+│   ├── 18_Test_hooks/                          # 🪝 Lifecycle hooks, annotations, grouping
+│   │   ├── 258_Test_HOOK.spec.ts               # test.skip / .slow / .fixme / .fail per browser
+│   │   ├── 259_Grouped_TEST.spec.ts            # test.step — named, reportable phases
+│   │   ├── 260_Test_Before_After.spec.ts       # beforeAll / beforeEach / afterEach / afterAll
+│   │   └── 261_Group_Describe.spec.ts          # describe.serial vs parallel siblings
 │   │
 │   └── Projects/
 │       └── Project_4_TTA_BANK/
@@ -1014,6 +1032,166 @@ await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 | `window.scrollTo(0, 0)` | Jump to top | Reset between checks |
 
 > 💡 Playwright already calls `scrollIntoViewIfNeeded` internally before `click()` / `fill()`. Explicit scroll is only needed when **no action** follows — e.g. just triggering an observer.
+
+---
+
+### 17 — Expect Assertions
+
+**Concept:** `expect()` is Playwright's assertion API. Three families — **Locator / Page / APIResponse** assertions auto-retry until they pass or the timeout fires; **value** assertions (numbers, strings, objects, errors) execute once and mirror Jest exactly.
+
+**Why:** Web UIs are async — the DOM mutates after fetches, animations, hydration. Manual `while + sleep` polling is flaky. Auto-retrying expects wait exactly as long as needed and fail with a precise diff. Value expects keep the rest of your TypeScript testing knowledge portable.
+
+**Q&A — why use this?**
+- **Q: Why must I `await` `expect(locator)…`?** A: Locator expects auto-retry under the hood. Without `await`, the Promise floats free and the test moves on before the check completes.
+- **Q: `toHaveText` vs `toContainText`?** A: `toHaveText` requires exact text match; `toContainText` is substring. Use `toContainText` when surrounding whitespace or markup may shift.
+- **Q: When do I use `expect.soft`?** A: When checking several independent invariants (e.g. validating every field in a form) — soft records each failure but keeps the test running, so one run reports them all.
+
+```mermaid
+flowchart TD
+    E[expect&#40;value&#41;] --> T{Type of value?}
+    T -->|Locator / Page / APIResponse| R[Auto-retrying<br/>requires <b>await</b>]
+    T -->|number / string / object / fn| V[Synchronous<br/>no await]
+    R --> M1[toBeVisible · toHaveText<br/>toHaveURL · toBeOK]
+    V --> M2[toBe · toEqual · toContain<br/>toThrow · toMatchObject]
+    R --> N1[.not · .soft · expect.poll · expect.toPass]
+    V --> N1
+
+    style R fill:#d1fae5,stroke:#10b981,color:#000
+    style V fill:#dbeafe,stroke:#3b82f6,color:#000
+    style N1 fill:#fef3c7,stroke:#f59e0b,color:#000
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 256 | `256_Expect.spec.ts` | Value (`toBe`/`toEqual`/`toBeGreaterThan`) + locator (`toBeVisible`/`toContainText`/`toHaveAttribute`/`toHaveCount`) + soft block + negation |
+| 257 | `257_URL_Asserations.spec.ts` | `toHaveTitle` (string + regex), `toHaveURL`, state asserts (`toBeChecked`/`toBeEnabled`/`toBeVisible`) |
+| 📄 | `Expect_Assertions_Cheatsheet.md` | One-pager — every common assertion, single example each (interview prep) |
+| 📄 | `More_Expect_Examples.md` | Full TTA reference — visibility, state, text, attributes, accessibility, screenshots, modifiers |
+
+```ts
+// Value assertions — synchronous, no await
+expect(1 + 2).toBe(3);
+expect({ age: 20, role: 'admin' }).toEqual({ role: 'admin', age: 20 });
+
+// Locator assertions — auto-retrying, await required
+const heading = page.getByText('multiple element filters', { exact: true });
+await expect(heading).toBeVisible();
+await expect(heading).toContainText('filter', { timeout: 10_000 });
+await expect(page.locator('footer a')).toHaveCount(16);
+
+// Soft block — collect failures, keep running
+await expect.soft(firstName).toHaveAttribute('id', 'first-name');
+await expect.soft(firstName).toBeVisible();
+await expect.soft(firstName).toHaveValue('');
+
+// Negation
+await expect(page.locator('#error')).not.toBeVisible();
+
+// Page assertions
+await expect(page).toHaveTitle(/Calendar/);
+await expect(page).toHaveURL('https://app.thetestingacademy.com/playwright/widgets/calendar');
+```
+
+| Family | Auto-retry? | Examples |
+|:-------|:-----------:|:---------|
+| Locator | ✅ | `toBeVisible`, `toHaveText`, `toHaveCount`, `toBeChecked`, `toHaveAttribute` |
+| Page | ✅ | `toHaveTitle`, `toHaveURL`, `toHaveScreenshot` |
+| APIResponse | ✅ | `toBeOK` |
+| Value (Jest-style) | ❌ | `toBe`, `toEqual`, `toContain`, `toThrow`, `toMatchObject` |
+
+> 💡 Default auto-retry timeout is **5 s**. Override per-call via `{ timeout: 10_000 }`, or globally via `expect.configure({ timeout: 30_000 })`. Two reference docs live in `tests/17_Expect_Assertions/` — `Expect_Assertions_Cheatsheet.md` (short) and `More_Expect_Examples.md` (long).
+
+---
+
+### 18 — Test Hooks & Annotations
+
+**Concept:** Tests rarely live alone. Playwright provides **lifecycle hooks** (`beforeAll`/`beforeEach`/`afterEach`/`afterAll`), **annotations** (`test.skip`/`.slow`/`.fail`/`.fixme`/`.only`), and **structural primitives** (`test.step`, `test.describe`, `test.describe.serial`) to shape what runs, in what order, under what conditions.
+
+**Why:** Real suites need shared setup (login once, seed DB), conditional skips per-browser/per-env, named steps that show up in reports, and the occasional ordered scenario where state flows from one test to the next (cart → checkout).
+
+**Q&A — why use this?**
+- **Q: Is `beforeAll` truly "once"?** A: Once per worker per file. With `fullyParallel: true`, every worker that picks up a test in this file re-runs `beforeAll`. For true cross-worker setup use a `globalSetup` script in `playwright.config.ts`.
+- **Q: When should I reach for `describe.serial`?** A: Only when tests must share mutable state (a logged-in cart that the next test consumes). It defeats parallelism — prefer fresh state via fixtures wherever you can.
+- **Q: `test.fixme` vs `test.skip`?** A: `skip` = ignored on purpose / not relevant in this run; `fixme` = known broken, will be fixed. `fixme` gives triage a better signal than a silent skip.
+
+```mermaid
+sequenceDiagram
+    participant W as Worker
+    participant H as Hooks
+    participant T1 as Test 1
+    participant T2 as Test 2
+
+    W->>H: test.beforeAll
+    Note over H: once per worker per file
+    W->>H: test.beforeEach
+    H->>T1: run Test 1
+    T1->>H: afterEach (screenshot on fail)
+    W->>H: test.beforeEach
+    H->>T2: run Test 2
+    T2->>H: afterEach
+    W->>H: test.afterAll
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 258 | `258_Test_HOOK.spec.ts` | Conditional `test.skip(browserName === 'firefox', …)`, `test.slow`, `test.fixme`, `test.fail` |
+| 259 | `259_Grouped_TEST.spec.ts` | `test.step('open page', …)` — named phases, reportable in Allure / trace viewer |
+| 260 | `260_Test_Before_After.spec.ts` | `beforeAll` / `beforeEach` / `afterEach` (failure screenshot) / `afterAll` |
+| 261 | `261_Group_Describe.spec.ts` | `test.describe.serial(…)` for ordered suite + sibling parallel standalones |
+
+```ts
+// Lab 260 — full lifecycle
+test.beforeAll(async () => {
+    console.log('beforeAll — server is up');           // once per worker per file
+});
+
+test.beforeEach(async ({ page }) => {
+    await page.goto('https://app.thetestingacademy.com/playwright/');
+});
+
+test('practice index has 29 cards', async ({ page }) => {
+    await expect(page.locator('.index-card')).toHaveCount(29);
+});
+
+test.afterEach(async ({ page }, testInfo) => {
+    if (testInfo.status !== testInfo.expectedStatus) {
+        await page.screenshot({ path: `out/fail-${testInfo.title}.png`, fullPage: true });
+    }
+});
+
+test.afterAll(async () => { console.log('afterAll — tear down'); });
+
+// Lab 258 — conditional skip + slow + fixme + fail
+test('title test', async ({ page, browserName }) => {
+    test.skip(browserName === 'firefox', 'Feature not yet supported on Firefox');
+    await page.goto(URL);
+    await expect(page).toHaveTitle(/Multiple Element Filter/, { timeout: 15_000 });
+});
+
+// Lab 259 — named steps
+await test.step('open practice page', async () => { await page.goto(URL); });
+await test.step('fields are visible', async () => {
+    await expect(page.getByRole('textbox', { name: 'Email Address' })).toBeVisible();
+});
+
+// Lab 261 — ordered suite
+test.describe.serial('Checkout suite — must run in order', () => {
+    test('open landing',   async () => { /* … */ });
+    test('search product', async () => { /* … */ });
+    test('add to cart',    async () => { /* … */ });
+    test('go to checkout', async () => { /* … */ });
+});
+```
+
+| Annotation | Effect | Use For |
+|:-----------|:-------|:--------|
+| `test.skip(cond, reason)` | Skips when `cond === true` | Per-browser / per-env gating |
+| `test.slow(cond, reason)` | Triples default timeout | Heavy pages on a specific browser |
+| `test.fixme(cond?)` | Marks known broken — won't run | Triage queue — better than silent skip |
+| `test.fail()` | Test is expected to fail | TDD red-phase, contract not yet shipped |
+| `test.only` | Run only marked tests in this file | Local debug — never commit |
+
+> ⚠️ `test.describe.serial` makes failures cascade — once a test in the block fails, every later test is skipped. Wanted for state-coupled flows, dangerous everywhere else.
 
 ---
 
