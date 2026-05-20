@@ -1,0 +1,41 @@
+- description: valid credentials
+  username: admin
+  password: admin123
+  shouldPass: true
+  expectedError: ""
+
+- description: invalid password
+  username: admin
+  password: wrongpass
+  shouldPass: false
+  expectedError: Invalid credentials
+
+- description: empty username
+  username: ""
+  password: admin123
+  shouldPass: false
+  expectedError: Username is required
+
+- description: empty password
+  username: admin
+  password: ""
+  shouldPass: false
+  expectedError: Password is required
+
+- description: locked account
+  username: locked_user
+  password: pass123
+  shouldPass: false
+  expectedError: Account is locked
+
+- description: special chars
+  username: admin
+  password: "p@$$w0rd!"
+  shouldPass: true
+  expectedError: ""
+
+- description: SQL injection
+  username: "admin' OR '1'='1"
+  password: password
+  shouldPass: false
+  expectedError: Invalid credentials

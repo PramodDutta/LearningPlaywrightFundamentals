@@ -43,6 +43,7 @@
    - [16 — Scroll to Element](#16--scroll-to-element)
    - [17 — Expect Assertions](#17--expect-assertions)
    - [18 — Test Hooks & Annotations](#18--test-hooks--annotations)
+   - [19 — Data-Driven Testing](#19--data-driven-testing)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
@@ -78,7 +79,8 @@ flowchart LR
     O --> P[📜 Scroll to Element<br/>Lab 255]
     P --> Q[✅ Expect Assertions<br/>Labs 256–257]
     Q --> R[🪝 Test Hooks<br/>Labs 258–261]
-    R --> G[🏦 Real Project<br/>TTA Bank]
+    R --> S[📂 Data-Driven Testing<br/>Labs 262–265]
+    S --> G[🏦 Real Project<br/>TTA Bank]
 
     style A fill:#fef3c7,stroke:#f59e0b,color:#000
     style G fill:#d1fae5,stroke:#10b981,color:#000
@@ -108,7 +110,8 @@ flowchart LR
 | 16 | `16_Scroll_toElement` | 255 | `scrollIntoViewIfNeeded`, `window.scrollBy/scrollTo`, lazy-list polling |
 | 17 | `17_Expect_Assertions` | 256–257 | Value vs locator vs page assertions, soft assertions, URL/title checks, cheatsheets |
 | 18 | `18_Test_hooks` | 258–261 | Annotations (`skip/slow/fixme/fail`), `test.step`, lifecycle hooks, `describe.serial` |
-| 19 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| 19 | `19_Data_Driven_Testing` | 262–265 | DDT — inline arrays, CSV via `fs`, JSON imports, YAML + XLSX readers, parametrized `test()` loop |
+| 20 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 
 ---
 
@@ -299,6 +302,18 @@ LearningPlaywrightFundamentals/
 │   │   ├── 259_Grouped_TEST.spec.ts            # test.step — named, reportable phases
 │   │   ├── 260_Test_Before_After.spec.ts       # beforeAll / beforeEach / afterEach / afterAll
 │   │   └── 261_Group_Describe.spec.ts          # describe.serial vs parallel siblings
+│   │
+│   ├── 19_Data_Driven_Testing/                 # 📂 Parametrize tests from arrays / CSV / JSON / YAML / XLSX
+│   │   ├── 262_DDT_Simple.spec.ts              # Inline array of objects → one test per row
+│   │   ├── 263_DDT_CSV.spec.ts                 # readCSV('login-data.csv') → loop tests
+│   │   ├── 264_DDT_CSV.spec.ts                 # CSV + hooks + branch on shouldPass / expectedError
+│   │   ├── 265_DDT_JSON.spec.ts                # import JSON directly via TS module resolver
+│   │   ├── csvReader.ts                        # Hand-rolled CSV parser → TestDataRow[]
+│   │   ├── xlsxReader.ts                       # XLSX → JSON via the `xlsx` package
+│   │   ├── yamlReader.ts                       # YAML → array via `js-yaml`
+│   │   ├── login-data.csv                      # 7-row login fixture
+│   │   ├── login-data.yaml                     # Same fixture in YAML
+│   │   └── registration-data.json              # 5-row registration fixture
 │   │
 │   └── Projects/
 │       └── Project_4_TTA_BANK/
@@ -1192,6 +1207,103 @@ test.describe.serial('Checkout suite — must run in order', () => {
 | `test.only` | Run only marked tests in this file | Local debug — never commit |
 
 > ⚠️ `test.describe.serial` makes failures cascade — once a test in the block fails, every later test is skipped. Wanted for state-coupled flows, dangerous everywhere else.
+
+---
+
+### 19 — Data-Driven Testing
+
+**Concept:** Data-Driven Testing (DDT) means parameterizing one test body and feeding it many rows of input — so a single `test('Login with: ...', ...)` becomes **N** tests, one per row. In Playwright/TS this is done by wrapping `test()` in a plain `for (const data of rows)` loop. The data source can be an inline array, a CSV, a JSON, a YAML, or an XLSX file.
+
+**Why:** Hand-writing a separate test per credential combo (`valid`, `invalid password`, `empty username`, `SQL injection`…) is copy-paste hell. DDT lets you keep **one** test body and a separate, reviewable **data file** — non-coders can edit the CSV, QA can grow the matrix, and the test count scales linearly with rows.
+
+**Q&A — why use this?**
+- **Q: Where does the `for` loop go — inside or outside `test()`?** A: **Outside.** The loop registers N independent tests at file-load time. Looping inside one test gives you a single test that fails on the first row and stops.
+- **Q: Why not Playwright's CSV/JSON reporter trick?** A: Playwright has no built-in fixture for "read this CSV, give me rows". You roll a tiny reader (`csvReader.ts`, ~30 lines) or import JSON directly. Same end result, full type control.
+- **Q: How do I keep test names readable?** A: Use a `description` column. `test(`Login with: ${data.description}`, …)` produces clean per-row names in the report instead of `Login #1`, `Login #2`.
+
+```mermaid
+flowchart LR
+    F["Data file<br/>CSV / JSON / YAML / XLSX"] --> R["Reader<br/>readCSV / readYAML / readXLSX<br/>or import JSON"]
+    R --> A["TestDataRow[]"]
+    A --> L{for &#40;const row of rows&#41;}
+    L --> T1["test&#40;'Login with: '+row.description&#41;"]
+    L --> T2["test&#40;'Login with: '+row.description&#41;"]
+    L --> T3["test&#40;'Login with: '+row.description&#41;"]
+    T1 --> P[Playwright runner — N parallel tests]
+    T2 --> P
+    T3 --> P
+
+    style F fill:#fef3c7,stroke:#f59e0b,color:#000
+    style R fill:#dbeafe,stroke:#3b82f6,color:#000
+    style P fill:#d1fae5,stroke:#10b981,color:#000
+```
+
+| Lab | File | Demonstrates |
+|:---:|:-----|:-------------|
+| 262 | `262_DDT_Simple.spec.ts` | Inline array of 5 login rows — `for (const data of loginData) { test(...) }` |
+| 263 | `263_DDT_CSV.spec.ts` | `readCSV('login-data.csv')` → 7 rows → 7 tests |
+| 264 | `264_DDT_CSV.spec.ts` | CSV + `beforeEach` / `afterEach` + branch on `shouldPass` ('true' string) and `expectedError` |
+| 265 | `265_DDT_JSON.spec.ts` | `import loginData from './registration-data.json'` — no reader needed, TS handles parse |
+| 🛠 | `csvReader.ts` | 30-line CSV parser → `TestDataRow[]` |
+| 🛠 | `xlsxReader.ts` | `XLSX.readFile + sheet_to_json` for spreadsheets |
+| 🛠 | `yamlReader.ts` | `js-yaml` parse → array, with optional `key` for nested docs |
+
+```ts
+// Lab 263 — CSV-driven login matrix
+import { test, expect } from '@playwright/test';
+import { readCSV } from './csvReader';
+
+const loginData = readCSV('login-data.csv');
+
+for (const data of loginData) {
+    test(`Login with : ${data.description}`, async ({ page }) => {
+        await page.goto('https://app.thetestingacademy.com/playwright/multiple_element_filter');
+
+        await page.getByRole('textbox', { name: 'Email Address' }).fill(data.username);
+        await page.getByRole('textbox', { name: 'Password' }).fill(data.password);
+        await page.getByRole('button', { name: 'Login to Practice Account' }).click();
+
+        if (data.shouldPass === 'true') {
+            await expect(page).not.toHaveURL(/multiple_element_filter/);
+        } else {
+            await expect(page.getByText(data.expectedError)).toBeVisible();
+        }
+    });
+}
+```
+
+```ts
+// csvReader.ts — minimal hand-rolled parser
+import * as fs from 'fs';
+import * as path from 'path';
+
+export interface TestDataRow { [key: string]: string }
+
+export function readCSV(filePath: string): TestDataRow[] {
+    const content = fs.readFileSync(path.resolve(filePath), 'utf-8');
+    const [header, ...lines] = content.trim().split('\n');
+    const headers = header.split(',').map(h => h.trim());
+
+    return lines.map(line => {
+        const values = line.split(',');
+        return Object.fromEntries(
+            headers.map((h, i) => [h, values[i]?.trim() ?? ''])
+        ) as TestDataRow;
+    });
+}
+```
+
+| Data Source | Reader | When to Use |
+|:------------|:-------|:------------|
+| Inline `const rows = [...]` | none | Tiny matrices (< 10 rows) — keeps test self-contained |
+| `.json` | `import data from './x.json'` | Structured payloads, nested objects, TS validates shape |
+| `.csv` | `readCSV(path)` | Non-coders edit data in Excel/Numbers — flat tabular fixtures |
+| `.yaml` | `readYAML(path, key?)` | Human-friendly multi-line strings, comments, nested groups |
+| `.xlsx` | `readXLSX(path, sheet?)` | Real business datasets that already live in spreadsheets |
+
+> ⚠️ Read the file **at module top-level** (outside `test()`). If you read it inside `beforeAll`, Playwright has already finished test discovery and your loop registers zero tests.
+
+> 💡 The CSV column `shouldPass` is a **string** (`"true"` / `"false"`), not a boolean — that's why Lab 264 compares with `=== 'true'`. JSON keeps real booleans (Lab 265 still uses the string compare to stay symmetric, but you can switch to truthy checks once typed).
 
 ---
 
