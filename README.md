@@ -47,6 +47,7 @@
    - [20–23 — Scaffolded Advanced Modules](#2023--scaffolded-advanced-modules)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
    - [Projects — QA Profile](#projects--qa-profile)
+   - [TTACart Project](#ttacart-project)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
 9. [Reporting](#-reporting)
@@ -120,6 +121,7 @@ flowchart LR
 | 23 | `23_Advance_Framework` | Scaffold | Advanced framework module placeholder |
 | Project 4 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 | Project 5 | `Projects/Project_5_QA_Profile` | Scaffold | QA profile capstone placeholder |
+| TTACart | `TTACartProject` | E2E | Login → cart → checkout using Page Objects and `.env` credentials |
 
 ---
 
@@ -333,13 +335,22 @@ LearningPlaywrightFundamentals/
 │       │   └── Task1.spec.ts                   # 🏦 Signup → Transfer → Verify
 │       └── Project_5_QA_Profile/               # 🚧 Scaffolded project
 │
+├── TTACartProject/
+│   ├── .env                                    # TTACART_USERNAME / TTACART_PASSWORD
+│   ├── pages/
+│   │   ├── TTACartLoginPage.ts                 # Login page object
+│   │   ├── TTACartInventoryPage.ts             # Inventory/cart page object
+│   │   └── TTACartCheckoutPage.ts              # Checkout page object
+│   └── tests/
+│       └── ttacartE2E.spec.ts                  # Login → cart → checkout E2E
+│
 ├── utils/
 │   └── CustomTTAReporter.ts                    # Custom HTML report → ./tta-report
 │
 ├── .github/workflows/
 │   └── playwright.yml                          # CI: Ubuntu + Node LTS + artifacts
 │
-├── playwright.config.ts                        # FullHD, headed, trace/video/screenshot on, HTML reporter
+├── playwright.config.ts                        # FullHD, headed, trace/video/screenshot on, HTML + TTA reporters
 ├── package.json                                # npm scripts: test / report / go
 ├── go.sh                                       # One-shot stage → commit → push
 ├── user-session.json                           # Saved storage state (Lab 228)
@@ -381,6 +392,7 @@ npm run report:tta           # 🎓 Open the generated custom TTA report (when e
 ```bash
 npx playwright test tests/01_Basics/Lab209.spec.ts
 npx playwright test tests/03_Locators_Commands/   # entire folder
+npx playwright test TTACartProject/tests/ttacartE2E.spec.ts --project=chromium
 npx playwright test -g "Helen Bennett"            # by test name
 ```
 
@@ -1370,6 +1382,41 @@ The test file (`Task1.spec.ts`) demonstrates:
 
 ---
 
+### TTACart Project
+
+`TTACartProject` is a Page Object Model E2E flow for the TTACart demo app:
+
+```mermaid
+flowchart LR
+    A[Login page] --> B[Inventory]
+    B --> C[Add two products]
+    C --> D[Cart]
+    D --> E[Checkout information]
+    E --> F[Checkout step two]
+```
+
+Credentials are read from `TTACartProject/.env`:
+
+```env
+TTACART_USERNAME=standard_user
+TTACART_PASSWORD=tta_secret
+```
+
+Run the project test:
+
+```bash
+npx playwright test TTACartProject/tests/ttacartE2E.spec.ts --project=chromium
+```
+
+The test uses:
+
+- `TTACartLoginPage.ts` for login actions.
+- `TTACartInventoryPage.ts` for product selection, cart navigation, and checkout.
+- `TTACartCheckoutPage.ts` for checkout form completion.
+- `dotenv` to load project credentials before the test starts.
+
+---
+
 ## 🎯 Locator Strategy Cheat Sheet
 
 ```mermaid
@@ -1415,13 +1462,13 @@ flowchart TD
 
 ## 📊 Reporting
 
-The active `playwright.config.ts` uses Playwright's built-in **HTML reporter**. Allure and the custom TTA reporter are kept in the repo and can be enabled by switching the commented reporter line in the config.
+The active `playwright.config.ts` runs both Playwright's built-in **HTML reporter** and the custom **TTA reporter**. Allure is available in the repo and can be enabled by switching to the commented reporter line in the config.
 
 ```mermaid
 flowchart LR
     T[npx playwright test] --> R1[📘 HTML Reporter<br/>./playwright-report]
     T -.enable in config.-> R2[📗 Allure Reporter<br/>./allure-results]
-    T -.enable in config.-> R3[📕 Custom TTA Reporter<br/>./tta-report]
+    T --> R3[📕 Custom TTA Reporter<br/>./tta-report]
     R1 -->|npm run report| V1[Browser]
     R2 -->|allure generate + open| V2[Browser]
     R3 -->|npm run report:tta| V3[Browser]
@@ -1431,7 +1478,7 @@ flowchart LR
 |:---------|:---------:|:-------|:-------------|
 | HTML | ✅ active | `./playwright-report/index.html` | `npm run report` |
 | Allure | Available, commented in config | `./allure-results` → `./allure-report` | `npx allure open ./allure-report` |
-| Custom TTA | Available, commented in config | `./tta-report/index.html` | `npm run report:tta` |
+| Custom TTA | ✅ active | `./tta-report/index.html` | `npm run report:tta` |
 
 > The **Custom TTA Reporter** (`utils/CustomTTAReporter.ts`) is hand-written specifically for The Testing Academy's branded report style — a great example of Playwright's pluggable `Reporter` interface.
 
@@ -1505,10 +1552,11 @@ flowchart LR
 
 | Setting | Value | Why |
 |:--------|:------|:----|
-| `testDir` | `./tests` | Standard layout |
+| `testDir` | `./` | Includes root lab tests and standalone project folders |
+| `testMatch` | `tests/**/*.spec.ts`, `TTACartProject/tests/**/*.spec.ts` | Runs numbered labs plus TTACart project specs |
 | `fullyParallel` | `true` | Speed |
 | `retries` | `2` on CI / `0` locally | Catch flakes on CI without slowing dev |
-| `reporter` | `[['html']]` | Built-in Playwright HTML report is active |
+| `reporter` | `[['html'], ['./utils/CustomTTAReporter.ts']]` | Built-in HTML plus custom TTA report |
 | `headless` | `false` | 👀 Learning is easier when you watch |
 | `viewport` | `1920 × 1080` | Full HD — matches real desktops |
 | `trace` | `'on'` | Record every action — open with `show-trace` |
@@ -1519,7 +1567,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A[playwright.config.ts] --> B[fullyParallel: true]
-    A --> C[reporter: HTML]
+    A --> C[reporter: HTML + TTA]
     A --> D[use: ...]
     D --> E[trace: on]
     D --> F[video: on]
