@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import path from 'path';
 import { readCSV } from './csvReader';
 
 test.describe('DDT CSV', () => {
-    const loginData = readCSV("login-data.csv");
+    const loginData = readCSV(path.join(__dirname, 'login-data.csv'));
 
     for (const data of loginData) {
 

@@ -44,7 +44,7 @@
    - [17 — Expect Assertions](#17--expect-assertions)
    - [18 — Test Hooks & Annotations](#18--test-hooks--annotations)
    - [19 — Data-Driven Testing](#19--data-driven-testing)
-   - [20–23 — Scaffolded Advanced Modules](#2023--scaffolded-advanced-modules)
+   - [20–23 — Advanced Module Scaffolds](#2023--advanced-module-scaffolds)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
    - [Projects — QA Profile](#projects--qa-profile)
    - [TTACart Project](#ttacart-project)
@@ -60,7 +60,7 @@
 
 ## 🎯 Overview
 
-This repository is the companion code for a structured **Playwright + TypeScript** course taught by **The Testing Academy**. Each implemented lab is numbered (`Lab209`, `211`, `212` … `265`) so the progression maps 1:1 to the curriculum, with additional advanced modules scaffolded for upcoming lessons.
+This repository is the companion code for a structured **Playwright + TypeScript** course taught by **The Testing Academy**. Each implemented lab is numbered (`Lab209`, `211`, `212` … `274`) so the progression maps 1:1 to the curriculum, with additional advanced modules scaffolded for upcoming lessons.
 
 You will move through the four classic stages of automation maturity:
 
@@ -82,7 +82,7 @@ flowchart LR
     O --> P[📜 Scroll to Element<br/>Lab 255]
     P --> Q[✅ Expect Assertions<br/>Labs 256–257]
     Q --> R[🪝 Test Hooks<br/>Labs 258–261]
-    R --> S[📂 Data-Driven Testing<br/>Labs 262–265]
+    R --> S[📂 Data-Driven Testing<br/>Labs 262–269]
     S --> U[🚧 Advanced Scaffolds<br/>Modules 20–23]
     U --> G[🏦 Real Project<br/>TTA Bank]
 
@@ -97,7 +97,7 @@ flowchart LR
 | Stage | Module | Labs | What You Master |
 |:-----:|:-------|:----:|:----------------|
 | 1 | `01_Basics` | 209–210 | First test, annotations (`skip`, `only`, `fail`, `slow`) |
-| 2 | `02_First_tests` | 211–218 | Browser → Context → Page hierarchy, multi-tab, multi-user |
+| 2 | `02_first_tests` | 211–218 | Browser → Context → Page hierarchy, multi-tab, multi-user |
 | 3 | `03_Locators_Commands` | 219–227 | `goto` options, locators (CSS / XPath / Role), cookies |
 | 4 | `04_Session_Storage` | 228–229 | `storageState` — login once, reuse session forever |
 | 5 | `05_Allure_Reporting` | 230 | Allure annotations: epic → feature → story |
@@ -114,11 +114,11 @@ flowchart LR
 | 16 | `16_Scroll_toElement` | 255 | `scrollIntoViewIfNeeded`, `window.scrollBy/scrollTo`, lazy-list polling |
 | 17 | `17_Expect_Assertions` | 256–257 | Value vs locator vs page assertions, soft assertions, URL/title checks, cheatsheets |
 | 18 | `18_Test_hooks` | 258–261 | Annotations (`skip/slow/fixme/fail`), `test.step`, lifecycle hooks, `describe.serial` |
-| 19 | `19_Data_Driven_Testing` | 262–265 | DDT — inline arrays, CSV via `fs`, JSON imports, YAML + XLSX readers, parametrized `test()` loop |
-| 20 | `20_Page_Object_Model` | Scaffold | Page Object Model module placeholder |
-| 21 | `21_Fixture` | Scaffold | Custom fixture module placeholder |
-| 22 | `22_Misc_Concepts` | Scaffold | Miscellaneous Playwright concepts placeholder |
-| 23 | `23_Advance_Framework` | Scaffold | Advanced framework module placeholder |
+| 19 | `19_Data_Driven_Testing` | 262–269 | DDT — inline arrays, CSV/JSON files, Faker-generated data, and parametrized `test()` loops |
+| 20 | `20_Page_Object_Model` | 270-271 | Compare inline login automation with a reusable `LoginPage` page object |
+| 21 | `21_Fixture` | 272 | Custom fixture scaffold with a skipped placeholder spec |
+| 22 | `22_Misc_Concepts` | 273 | Miscellaneous Playwright concepts scaffold with a skipped placeholder spec |
+| 23 | `23_Advance_Framework` | 274 | Advanced framework scaffold with a skipped placeholder spec |
 | Project 4 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
 | Project 5 | `Projects/Project_5_QA_Profile` | Scaffold | QA profile capstone placeholder |
 | TTACart | `TTACartProject` | E2E | Login → cart → checkout using Page Objects and `.env` credentials |
@@ -216,12 +216,13 @@ flowchart TD
 LearningPlaywrightFundamentals/
 │
 ├── tests/
+│   ├── README.md                               # Index for lesson folders and run commands
 │   ├── 01_Basics/                              # 🍼 Hello-world labs
 │   │   ├── Lab209.spec.ts                      # First page.goto + title assertion
 │   │   ├── Lab210_Test_Annoations.spec.ts      # skip / only / fail / slow
 │   │   └── Util.ts
 │   │
-│   ├── 02_First_tests/                         # 🧠 Browser / Context / Page
+│   ├── 02_first_tests/                         # 🧠 Browser / Context / Page
 │   │   ├── 211_First_Running_Test.spec.ts
 │   │   ├── 212_Browser_Context_Pages.spec.ts   # Manual 3-level launch
 │   │   ├── 213_Multile_Context.spec.ts         # Two users in parallel
@@ -296,7 +297,8 @@ LearningPlaywrightFundamentals/
 │   │   └── testdata.txt                        # Sample upload payload
 │   │
 │   ├── 15_File_Download/                       # 📥 File download — waitForEvent + saveAs
-│   │   └── 254_File_Downlaod.spec.ts           # TTA widget — capture download event, persist via saveAs
+│   │   ├── 254_File_Downlaod.spec.ts           # TTA widget — capture download event, persist via saveAs
+│   │   └── downloads/README.md                 # Notes for ignored runtime download output
 │   │
 │   ├── 16_Scroll_toElement/                    # 📜 Scroll APIs — into view + window scroll + lazy
 │   │   └── 255_ScrollToView.spec.ts            # scrollIntoViewIfNeeded, window.scrollBy/To, lazy list grows past 10
@@ -318,6 +320,10 @@ LearningPlaywrightFundamentals/
 │   │   ├── 263_DDT_CSV.spec.ts                 # readCSV('login-data.csv') → loop tests
 │   │   ├── 264_DDT_CSV.spec.ts                 # CSV + hooks + branch on shouldPass / expectedError
 │   │   ├── 265_DDT_JSON.spec.ts                # import JSON directly via TS module resolver
+│   │   ├── 266_DDT_FakerJS.spec.ts             # Faker-generated registration data
+│   │   ├── 267_FakerJS2.spec.ts                # Faker variation examples
+│   │   ├── 268_FakerJS3.spec.ts                # Faker data generation patterns
+│   │   ├── 269_DDT_FakerJS.spec.ts             # Data-driven Faker test flow
 │   │   ├── csvReader.ts                        # Hand-rolled CSV parser → TestDataRow[]
 │   │   ├── xlsxReader.ts                       # XLSX → JSON via the `xlsx` package
 │   │   ├── yamlReader.ts                       # YAML → array via `js-yaml`
@@ -325,26 +331,41 @@ LearningPlaywrightFundamentals/
 │   │   ├── login-data.yaml                     # Same fixture in YAML
 │   │   └── registration-data.json              # 5-row registration fixture
 │   │
-│   ├── 20_Page_Object_Model/                   # 🚧 Scaffolded module
-│   ├── 21_Fixture/                             # 🚧 Scaffolded module
-│   ├── 22_Misc_Concepts/                       # 🚧 Scaffolded module
-│   ├── 23_Advance_Framework/                   # 🚧 Scaffolded module
+│   ├── 20_Page_Object_Model/                   # Page Object Model comparison
+│   │   ├── 270_WithOut_POM.spec.ts             # Direct locators/actions inside the spec
+│   │   ├── 271_Login_With_POM.spec.ts          # Same flow through LoginPage
+│   │   └── LoginPage.ts                        # Reusable login page object
+│   │
+│   ├── 21_Fixture/                             # Custom fixtures scaffold
+│   │   └── 272_Fixture_Placeholder.spec.ts     # Skipped placeholder
+│   │
+│   ├── 22_Misc_Concepts/                       # Miscellaneous concepts scaffold
+│   │   └── 273_Misc_Concepts_Placeholder.spec.ts # Skipped placeholder
+│   │
+│   ├── 23_Advance_Framework/                   # Advanced framework scaffold
+│   │   └── 274_Advanced_Framework_Placeholder.spec.ts # Skipped placeholder
 │   │
 │   └── Projects/
+│       ├── README.md                           # Project folder overview
 │       ├── Project_4_TTA_BANK/
 │       │   └── Task1.spec.ts                   # 🏦 Signup → Transfer → Verify
 │       └── Project_5_QA_Profile/               # 🚧 Scaffolded project
+│           └── README.md                       # Planned QA profile capstone notes
 │
 ├── TTACartProject/
+│   ├── README.md                               # TTACart setup and run guide
 │   ├── .env                                    # TTACART_USERNAME / TTACART_PASSWORD
 │   ├── pages/
+│   │   ├── README.md                           # Page object notes
 │   │   ├── TTACartLoginPage.ts                 # Login page object
 │   │   ├── TTACartInventoryPage.ts             # Inventory/cart page object
 │   │   └── TTACartCheckoutPage.ts              # Checkout page object
 │   └── tests/
+│       ├── README.md                           # E2E spec notes
 │       └── ttacartE2E.spec.ts                  # Login → cart → checkout E2E
 │
 ├── utils/
+│   ├── README.md                               # Utility and reporter notes
 │   └── CustomTTAReporter.ts                    # Custom HTML report → ./tta-report
 │
 ├── .github/workflows/
@@ -356,6 +377,8 @@ LearningPlaywrightFundamentals/
 ├── user-session.json                           # Saved storage state (Lab 228)
 └── README.md                                   # ← you are here
 ```
+
+Every lesson, project, and support folder now includes a local `README.md` that summarizes the files in that folder and the focused command to run that area.
 
 ---
 
@@ -1267,9 +1290,13 @@ flowchart LR
 | Lab | File | Demonstrates |
 |:---:|:-----|:-------------|
 | 262 | `262_DDT_Simple.spec.ts` | Inline array of 5 login rows — `for (const data of loginData) { test(...) }` |
-| 263 | `263_DDT_CSV.spec.ts` | `readCSV('login-data.csv')` → 7 rows → 7 tests |
+| 263 | `263_DDT_CSV.spec.ts` | `readCSV(path.join(__dirname, 'login-data.csv'))` → 7 rows → 7 tests |
 | 264 | `264_DDT_CSV.spec.ts` | CSV + `beforeEach` / `afterEach` + branch on `shouldPass` ('true' string) and `expectedError` |
 | 265 | `265_DDT_JSON.spec.ts` | `import loginData from './registration-data.json'` — no reader needed, TS handles parse |
+| 266 | `266_DDT_FakerJS.spec.ts` | Faker-generated login data against the TTACart login form |
+| 267 | `267_FakerJS2.spec.ts` | Faker-filled registration form fields |
+| 268 | `268_FakerJS3.spec.ts` | Reusable `generateUser()` helper for Faker data |
+| 269 | `269_DDT_FakerJS.spec.ts` | Loop-generated Faker tests across multiple email domains |
 | 🛠 | `csvReader.ts` | 30-line CSV parser → `TestDataRow[]` |
 | 🛠 | `xlsxReader.ts` | `XLSX.readFile + sheet_to_json` for spreadsheets |
 | 🛠 | `yamlReader.ts` | `js-yaml` parse → array, with optional `key` for nested docs |
@@ -1277,9 +1304,10 @@ flowchart LR
 ```ts
 // Lab 263 — CSV-driven login matrix
 import { test, expect } from '@playwright/test';
+import path from 'path';
 import { readCSV } from './csvReader';
 
-const loginData = readCSV('login-data.csv');
+const loginData = readCSV(path.join(__dirname, 'login-data.csv'));
 
 for (const data of loginData) {
     test(`Login with : ${data.description}`, async ({ page }) => {
@@ -1333,16 +1361,16 @@ export function readCSV(filePath: string): TestDataRow[] {
 
 ---
 
-### 20–23 — Scaffolded Advanced Modules
+### 20–23 — Advanced Module Scaffolds
 
-The next curriculum blocks are present as empty directories so future lessons can be added without changing the top-level layout:
+Module 20 now contains a working Page Object Model comparison. Modules 21-23 are committed with skipped placeholder specs so the folders are tracked without adding failing tests:
 
 | Module | Current Status | Planned Focus |
 |:-------|:---------------|:--------------|
-| `20_Page_Object_Model` | Scaffolded | Page classes, reusable components, and app-specific actions |
-| `21_Fixture` | Scaffolded | Custom Playwright fixtures and typed test extension |
-| `22_Misc_Concepts` | Scaffolded | Cross-cutting Playwright patterns and edge cases |
-| `23_Advance_Framework` | Scaffolded | Framework structure, reusable utilities, and suite organization |
+| `20_Page_Object_Model` | Implemented | Direct login spec vs `LoginPage` page-object spec |
+| `21_Fixture` | Placeholder spec | Custom Playwright fixtures and typed test extension |
+| `22_Misc_Concepts` | Placeholder spec | Cross-cutting Playwright patterns and edge cases |
+| `23_Advance_Framework` | Placeholder spec | Framework structure, reusable utilities, and suite organization |
 
 ---
 
