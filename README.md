@@ -4,8 +4,8 @@
 
 ### *A hands-on, lab-by-lab journey into modern end-to-end test automation with Playwright + TypeScript*
 
-[![Playwright Tests](https://github.com/thetestingacademy/LearningPlaywrightFundamentals/actions/workflows/playwright.yml/badge.svg)](../../actions)
-![Playwright](https://img.shields.io/badge/Playwright-1.59-2EAD33?logo=playwright&logoColor=white)
+[![Playwright Tests](https://github.com/PramodDutta/LearningPlaywrightFundamentals/actions/workflows/playwright.yml/badge.svg)](../../actions)
+![Playwright](https://img.shields.io/badge/Playwright-1.59.1-2EAD33?logo=playwright&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-LTS-339933?logo=node.js&logoColor=white)
 ![Allure](https://img.shields.io/badge/Allure-Reporting-FF5722)
@@ -44,7 +44,9 @@
    - [17 — Expect Assertions](#17--expect-assertions)
    - [18 — Test Hooks & Annotations](#18--test-hooks--annotations)
    - [19 — Data-Driven Testing](#19--data-driven-testing)
+   - [20–23 — Scaffolded Advanced Modules](#2023--scaffolded-advanced-modules)
    - [Projects — TTA Bank E2E](#projects--tta-bank-e2e)
+   - [Projects — QA Profile](#projects--qa-profile)
 7. [Locator Strategy Cheat Sheet](#-locator-strategy-cheat-sheet)
 8. [Wait Strategies (`waitUntil`)](#-wait-strategies-waituntil)
 9. [Reporting](#-reporting)
@@ -57,7 +59,7 @@
 
 ## 🎯 Overview
 
-This repository is the companion code for a structured **Playwright + TypeScript** course taught by **The Testing Academy**. Each lab is numbered (`Lab209`, `211`, `212` … `233`) so the progression maps 1:1 to the curriculum.
+This repository is the companion code for a structured **Playwright + TypeScript** course taught by **The Testing Academy**. Each implemented lab is numbered (`Lab209`, `211`, `212` … `265`) so the progression maps 1:1 to the curriculum, with additional advanced modules scaffolded for upcoming lessons.
 
 You will move through the four classic stages of automation maturity:
 
@@ -80,7 +82,8 @@ flowchart LR
     P --> Q[✅ Expect Assertions<br/>Labs 256–257]
     Q --> R[🪝 Test Hooks<br/>Labs 258–261]
     R --> S[📂 Data-Driven Testing<br/>Labs 262–265]
-    S --> G[🏦 Real Project<br/>TTA Bank]
+    S --> U[🚧 Advanced Scaffolds<br/>Modules 20–23]
+    U --> G[🏦 Real Project<br/>TTA Bank]
 
     style A fill:#fef3c7,stroke:#f59e0b,color:#000
     style G fill:#d1fae5,stroke:#10b981,color:#000
@@ -93,7 +96,7 @@ flowchart LR
 | Stage | Module | Labs | What You Master |
 |:-----:|:-------|:----:|:----------------|
 | 1 | `01_Basics` | 209–210 | First test, annotations (`skip`, `only`, `fail`, `slow`) |
-| 2 | `02_first_tests` | 211–218 | Browser → Context → Page hierarchy, multi-tab, multi-user |
+| 2 | `02_First_tests` | 211–218 | Browser → Context → Page hierarchy, multi-tab, multi-user |
 | 3 | `03_Locators_Commands` | 219–227 | `goto` options, locators (CSS / XPath / Role), cookies |
 | 4 | `04_Session_Storage` | 228–229 | `storageState` — login once, reuse session forever |
 | 5 | `05_Allure_Reporting` | 230 | Allure annotations: epic → feature → story |
@@ -111,7 +114,12 @@ flowchart LR
 | 17 | `17_Expect_Assertions` | 256–257 | Value vs locator vs page assertions, soft assertions, URL/title checks, cheatsheets |
 | 18 | `18_Test_hooks` | 258–261 | Annotations (`skip/slow/fixme/fail`), `test.step`, lifecycle hooks, `describe.serial` |
 | 19 | `19_Data_Driven_Testing` | 262–265 | DDT — inline arrays, CSV via `fs`, JSON imports, YAML + XLSX readers, parametrized `test()` loop |
-| 20 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| 20 | `20_Page_Object_Model` | Scaffold | Page Object Model module placeholder |
+| 21 | `21_Fixture` | Scaffold | Custom fixture module placeholder |
+| 22 | `22_Misc_Concepts` | Scaffold | Miscellaneous Playwright concepts placeholder |
+| 23 | `23_Advance_Framework` | Scaffold | Advanced framework module placeholder |
+| Project 4 | `Projects/Project_4_TTA_BANK` | Task1 | Full E2E flow: signup → transfer → verify balance |
+| Project 5 | `Projects/Project_5_QA_Profile` | Scaffold | QA profile capstone placeholder |
 
 ---
 
@@ -211,7 +219,7 @@ LearningPlaywrightFundamentals/
 │   │   ├── Lab210_Test_Annoations.spec.ts      # skip / only / fail / slow
 │   │   └── Util.ts
 │   │
-│   ├── 02_first_tests/                         # 🧠 Browser / Context / Page
+│   ├── 02_First_tests/                         # 🧠 Browser / Context / Page
 │   │   ├── 211_First_Running_Test.spec.ts
 │   │   ├── 212_Browser_Context_Pages.spec.ts   # Manual 3-level launch
 │   │   ├── 213_Multile_Context.spec.ts         # Two users in parallel
@@ -315,9 +323,15 @@ LearningPlaywrightFundamentals/
 │   │   ├── login-data.yaml                     # Same fixture in YAML
 │   │   └── registration-data.json              # 5-row registration fixture
 │   │
+│   ├── 20_Page_Object_Model/                   # 🚧 Scaffolded module
+│   ├── 21_Fixture/                             # 🚧 Scaffolded module
+│   ├── 22_Misc_Concepts/                       # 🚧 Scaffolded module
+│   ├── 23_Advance_Framework/                   # 🚧 Scaffolded module
+│   │
 │   └── Projects/
-│       └── Project_4_TTA_BANK/
-│           └── Task1.spec.ts                   # 🏦 Signup → Transfer → Verify
+│       ├── Project_4_TTA_BANK/
+│       │   └── Task1.spec.ts                   # 🏦 Signup → Transfer → Verify
+│       └── Project_5_QA_Profile/               # 🚧 Scaffolded project
 │
 ├── utils/
 │   └── CustomTTAReporter.ts                    # Custom HTML report → ./tta-report
@@ -325,7 +339,7 @@ LearningPlaywrightFundamentals/
 ├── .github/workflows/
 │   └── playwright.yml                          # CI: Ubuntu + Node LTS + artifacts
 │
-├── playwright.config.ts                        # FullHD, headed, trace=on, allure
+├── playwright.config.ts                        # FullHD, headed, trace/video/screenshot on, HTML reporter
 ├── package.json                                # npm scripts: test / report / go
 ├── go.sh                                       # One-shot stage → commit → push
 ├── user-session.json                           # Saved storage state (Lab 228)
@@ -345,10 +359,10 @@ LearningPlaywrightFundamentals/
 ### 2. Install
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/PramodDutta/LearningPlaywrightFundamentals.git
 cd LearningPlaywrightFundamentals
 
-npm install                  # Install deps
+npm ci                       # Install locked dependencies
 npx playwright install       # Download Chromium / Firefox / WebKit binaries
 ```
 
@@ -359,7 +373,7 @@ npm test                     # 🏃 All tests, Chromium only (config'd)
 npm run test:headed          # 👀 Watch the browser
 npm run test:ui              # 🖥 Open Playwright's interactive UI
 npm run report               # 📈 Open the HTML report
-npm run report:tta           # 🎓 Open the custom TTA report
+npm run report:tta           # 🎓 Open the generated custom TTA report (when enabled)
 ```
 
 ### 4. Run a single lab
@@ -1307,6 +1321,19 @@ export function readCSV(filePath: string): TestDataRow[] {
 
 ---
 
+### 20–23 — Scaffolded Advanced Modules
+
+The next curriculum blocks are present as empty directories so future lessons can be added without changing the top-level layout:
+
+| Module | Current Status | Planned Focus |
+|:-------|:---------------|:--------------|
+| `20_Page_Object_Model` | Scaffolded | Page classes, reusable components, and app-specific actions |
+| `21_Fixture` | Scaffolded | Custom Playwright fixtures and typed test extension |
+| `22_Misc_Concepts` | Scaffolded | Cross-cutting Playwright patterns and edge cases |
+| `23_Advance_Framework` | Scaffolded | Framework structure, reusable utilities, and suite organization |
+
+---
+
 ### Projects — TTA Bank E2E
 
 The capstone: a **real banking app** at `tta-bank-digital-973242068062.us-west1.run.app`.
@@ -1334,6 +1361,12 @@ The test file (`Task1.spec.ts`) demonstrates:
 - ✅ **Accessibility-first locators** (`getByRole`, `getByPlaceholder`, `getByText`)
 - ✅ **Multi-step assertions** — heading visible → button visible → balance updated → activity shows debit
 - ✅ **Module exports** so helpers can be reused in other spec files
+
+---
+
+### Projects — QA Profile
+
+`Projects/Project_5_QA_Profile` is scaffolded for the next project module. Add specs here when the QA profile capstone is implemented so project exercises stay separate from the numbered lab sequence.
 
 ---
 
@@ -1382,13 +1415,13 @@ flowchart TD
 
 ## 📊 Reporting
 
-Three reporters run on **every** test execution (configured in `playwright.config.ts`):
+The active `playwright.config.ts` uses Playwright's built-in **HTML reporter**. Allure and the custom TTA reporter are kept in the repo and can be enabled by switching the commented reporter line in the config.
 
 ```mermaid
 flowchart LR
     T[npx playwright test] --> R1[📘 HTML Reporter<br/>./playwright-report]
-    T --> R2[📗 Allure Reporter<br/>./allure-results]
-    T --> R3[📕 Custom TTA Reporter<br/>./tta-report]
+    T -.enable in config.-> R2[📗 Allure Reporter<br/>./allure-results]
+    T -.enable in config.-> R3[📕 Custom TTA Reporter<br/>./tta-report]
     R1 -->|npm run report| V1[Browser]
     R2 -->|allure generate + open| V2[Browser]
     R3 -->|npm run report:tta| V3[Browser]
@@ -1396,9 +1429,9 @@ flowchart LR
 
 | Reporter | Built-in? | Output | Open Command |
 |:---------|:---------:|:-------|:-------------|
-| HTML | ✅ | `./playwright-report/index.html` | `npm run report` |
-| Allure | npm pkg | `./allure-results` → `./allure-report` | `npx allure open ./allure-report` |
-| Custom TTA | `utils/CustomTTAReporter.ts` | `./tta-report/index.html` | `npm run report:tta` |
+| HTML | ✅ active | `./playwright-report/index.html` | `npm run report` |
+| Allure | Available, commented in config | `./allure-results` → `./allure-report` | `npx allure open ./allure-report` |
+| Custom TTA | Available, commented in config | `./tta-report/index.html` | `npm run report:tta` |
 
 > The **Custom TTA Reporter** (`utils/CustomTTAReporter.ts`) is hand-written specifically for The Testing Academy's branded report style — a great example of Playwright's pluggable `Reporter` interface.
 
@@ -1475,7 +1508,7 @@ flowchart LR
 | `testDir` | `./tests` | Standard layout |
 | `fullyParallel` | `true` | Speed |
 | `retries` | `2` on CI / `0` locally | Catch flakes on CI without slowing dev |
-| `reporter` | `[html, allure-playwright, CustomTTAReporter]` | Three views of the same run |
+| `reporter` | `[['html']]` | Built-in Playwright HTML report is active |
 | `headless` | `false` | 👀 Learning is easier when you watch |
 | `viewport` | `1920 × 1080` | Full HD — matches real desktops |
 | `trace` | `'on'` | Record every action — open with `show-trace` |
@@ -1486,7 +1519,7 @@ flowchart LR
 ```mermaid
 flowchart TD
     A[playwright.config.ts] --> B[fullyParallel: true]
-    A --> C[reporter: 3 reporters]
+    A --> C[reporter: HTML]
     A --> D[use: ...]
     D --> E[trace: on]
     D --> F[video: on]
